@@ -1,0 +1,5 @@
+[packages]
+
+prompt-toolkit = "==1.0.15"
+pylint = "*"
+"autopep8" = "*"
