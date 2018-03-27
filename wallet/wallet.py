@@ -5,6 +5,15 @@ from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.contrib.completers import WordCompleter
 from prompt_toolkit.completion import Completer, Completion
 
+from fuzzywuzzy import fuzz
+from fuzzywuzzy import process
+
+account_names = ["alex", "joe", "jim", "bob", "hue"]
+
+public_keys = ["SCR5xRhdyDbFRgPTbk8ZrBoFLC95zH2hxFAKSFguf6VFvQuqHhEvi",
+               "SCR4u8Ee47LQUUVKSwpbTBTSYm5tDnHv8V41rVENxVoYJVzoXVxb8",
+               "SCR7JrxZ5ikZyvq11CoYzzxuvVgMnkNt9CAJ7BdfD92fRfz2G3SY9"]
+
 
 def print_args(sig):
     arguments = list(sig.parameters.keys())
@@ -74,17 +83,53 @@ class MyCustomCompleter(Completer):
     def __init__(self, complition):
         self.completion = complition
 
-        self.wallet = get_methods(WalletApi)
-        self.app = get_methods(Impl)
+        # self.commands = set()
+        #
+        # for i in get_methods(WalletApi):
+        #     self.commands.add(i)
+        #
+        # for i in get_methods(Impl):
+        #     self.commands.add(i)
 
+        self.commands = []
+
+        self.commands += get_methods(WalletApi)
+        self.commands += get_methods(Impl)
+
+        print(self.commands)
+
+        # self.wallet = get_methods(WalletApi)
+        # self.app = get_methods(Impl)
 
     def get_completions(self, document, _):
         x = document.text
         word_before_cursor = document.get_word_before_cursor(WORD=True)
 
-        # print(word_before_cursor)
-        yield Completion('x', start_position=0)
-        yield Completion('y', start_position=0)
+        result = self.get_command_completion(word_before_cursor)
+
+        print(x)
+
+        for r in result:
+            position = 0
+
+            if len(word_before_cursor)  > 0:
+                position = len(word_before_cursor) * -1
+
+            yield Completion(r, start_position=position)
+
+    def get_command_completion(self, word_before_cursor):
+        if len(word_before_cursor) == 0:
+            return []
+
+        completion = []
+
+        result = process.extract(word_before_cursor, self.commands, limit=5)
+        for r in result:
+            word, ratio = r
+            if ratio > 50:
+                completion.append(word)
+
+        return completion
 
 
 class App:
